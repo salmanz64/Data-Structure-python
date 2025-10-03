@@ -4,7 +4,7 @@ class TreeNode:
         self.val = val
         self.leftChild = left
         self.rightChild = right
-        self.parent - parent
+        self.parent = parent
         
     def hasLeftChild(self):
         return self.leftChild
@@ -20,7 +20,7 @@ class TreeNode:
     
     
     def isLeaf(self):
-        return not(self.rightChild or self.rightChild)
+        return not(self.leftChild or self.rightChild)
     
     def isRoot(self):
         return not self.parent
@@ -30,8 +30,56 @@ class TreeNode:
     
     def hasBothChildren(self):
         return (self.rightChild and self.leftChild)
+
+    def findSuccessor(self):
+        succ = None
+        if self.hasRightChild():
+            succ = self.rightChild.findMin()
+        else:
+            if self.parent:
+                if self.isLeftChild():
+                    succ = self.parent
+                else:
+                    self.parent.rightChild = None
+                    succ= self.parent.findSuccessor()
+                    self.parent.rightChild = self
+                    
+        return succ
+                    
+    def findMin(self):
+        current = self
+        while current.hasLeftChild():
+            current = current.leftChild
+        return current 
     
-    
+    def spliceOut(self):
+        if self.isLeaf():
+            if self.isLeftChild():
+               self.parent.leftChild = None
+            else:
+               self.parent.rightChild = None
+        elif self.hasAnyChildren():
+            if self.hasLeftChild():
+               if self.isLeftChild():
+                  self.parent.leftChild = self.leftChild
+               else:
+                  self.parent.rightChild = self.leftChild
+               self.leftChild.parent = self.parent
+        else:
+               if self.isLeftChild():
+                  self.parent.leftChild = self.rightChild
+               else:
+                  self.parent.rightChild = self.rightChild
+               self.rightChild.parent = self.parent
+    def replaceNodeData(self, key, val, lc, rc):
+        self.key = key
+        self.val = val
+        self.leftChild = lc
+        self.rightChild = rc
+        if self.hasLeftChild():
+            self.leftChild.parent = self
+        if self.hasRightChild():
+            self.rightChild.parent = self
     
 
 class BinarySearchTree:
@@ -55,12 +103,12 @@ class BinarySearchTree:
     def _put(self,key,val,currentNode):
         if key<currentNode.key:
             if currentNode.hasLeftChild():
-                self._put(self,key,val,currentNode.leftChild)
+                self._put(key,val,currentNode.leftChild)
             else:
                 currentNode.leftChild = TreeNode(key,val,parent=currentNode)
         else:
             if currentNode.hasRightChild():
-                self._put(self,key,val,currentNode.rightChild)
+                self._put(key,val,currentNode.rightChild)
             else:
                 currentNode.rightChild = TreeNode(key,val,parent=currentNode)
                 
@@ -72,11 +120,14 @@ class BinarySearchTree:
         if self.root:
             res = self._get(key,self.root)
             if res:
-                return res.payload
+                return res.val
             else:
                 return None
         else:
             return None
+    
+
+
             
             
     
@@ -99,4 +150,71 @@ class BinarySearchTree:
         else:
             return False
         
-    
+    def delete(self,key):
+        if self.size >1:
+            nodeToRemove = self._get(key,self.root)
+            if nodeToRemove:
+                self.remove(nodeToRemove)
+                self.size -=1
+            else:
+                raise KeyError('Error','Key not Found')
+        elif self.size == 1 and self.root.key == key:
+            self.root = None
+            self.size -=1
+        else:
+            raise KeyError('Error',"key Not Found")
+        
+    def __delete__(self,key):
+        self.delete(key)
+        
+    def remove(self,currentNode):
+        if currentNode.isLeaf():
+            if currentNode.isLeftChild():
+                currentNode.parent.leftChild = None
+            else:
+                currentNode.parent.rightChild = None
+        elif currentNode.hasBothChildren() :
+            succ = currentNode.findSuccessor()
+            succ.spliceOut()
+            currentNode.key = succ.key
+            currentNode.val = succ.val
+        else:
+            if currentNode.hasLeftChild():
+                if currentNode.isLeftChild():
+                    currentNode.leftChild.parent = currentNode.parent
+                    currentNode.parent.leftChild = currentNode.leftChild
+                elif currentNode.isRightChild():
+                    currentNode.leftChild.parent = currentNode.parent
+                    currentNode.parent.rightChild = currentNode.leftChild
+                else:
+                    currentNode.replaceNodeData(
+        currentNode.leftChild.key,
+        currentNode.leftChild.val,
+        currentNode.leftChild.leftChild,
+        currentNode.leftChild.rightChild
+    )
+
+
+            else:
+                if currentNode.isLeftChild():
+                    currentNode.rightChild.parent = currentNode.parent
+                    currentNode.parent.leftChild = currentNode.rightChild
+                elif currentNode.isRightChild():
+                    currentNode.rightChild.parent = currentNode.parent
+                    currentNode.parent.rightChild = currentNode.rightChild
+                else:
+                            currentNode.replaceNodeData(currentNode.rightChild.key,
+                             currentNode.rightChild.val,
+                             currentNode.rightChild.leftChild,
+                             currentNode.rightChild.rightChild) 
+                    
+                    
+        
+mytree = BinarySearchTree()
+mytree[3]="red"
+mytree[4]="blue"
+mytree[6]="yellow"
+mytree[2]="at"
+
+print(mytree[6])
+print(mytree[2])
